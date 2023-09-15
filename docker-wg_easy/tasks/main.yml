@@ -1,0 +1,59 @@
+---
+- name: install iptables-services
+  dnf:
+    name:
+      - iptables-services
+    state: present
+
+- name: modprobe
+  modprobe:
+    name: ip_tables
+    state: present
+    persistent: present
+
+- name: add iptables to modules
+  lineinfile:
+    path: /etc/modules
+    line: ip_tables
+    create: yes
+
+- name: set forwarding IPv4
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: set forwarding IPv4
+  ansible.posix.sysctl:
+    name: net.ipv4.conf.all.src_valid_mark
+    value: "1"
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: install wg-easy
+  docker_container:
+    name: "wg-easy"
+    image: "weejewel/wg-easy"
+    expose:
+      - 51820
+      - 51821
+    ports:
+      - "51820:51820/udp"
+      #- "51821:51821/tcp"
+    networks:
+      - name: mynetwork
+        ipv4_address: 10.0.0.5
+
+    restart_policy: always
+    volumes:
+      - "/wg:/etc/wireguard"
+    env:
+      WG_HOST: "{{ server_ip }}"
+      PASSWORD: "wg12345"
+      WG_PORT: "51820"
+    capabilities:
+      - NET_ADMIN
+      - SYS_MODULE

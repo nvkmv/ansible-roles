@@ -1,0 +1,37 @@
+---
+- name: postgres
+  docker_container:
+    name: postgres
+    image: postgres:alpine
+    restart_policy: always
+    expose:
+      - 5432
+    volumes:
+      - /postgres:/var/lib/postgresql/data
+    env: POSTGRES_PASSWORD=nextcloud
+      POSTGRES_DB=next
+      POSTGRES_USER=nextcloud
+    networks:
+      - name: mynetwork
+        ipv4_address: 10.0.0.7
+    state: started
+
+- name: start nextcloud docker container
+  docker_container:
+    name: nextcloud
+    image: "nextcloud:apache"
+    expose:
+      - 80
+    volumes:
+      - /nextcloud:/var/www/html/
+    env:
+      NEXTCLOUD_TRUSTED_DOMAINS: ""
+      POSTGRES_DB: "next"
+      POSTGRES_USER: "nextcloud"
+      POSTGRES_PASSWORD: "nextcloud"
+      POSTGRES_HOST: "10.0.0.7"
+    networks:
+      - name: mynetwork
+        ipv4_address: 10.0.0.6
+    restart_policy: always
+    state: started

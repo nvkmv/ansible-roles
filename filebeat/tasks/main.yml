@@ -1,0 +1,36 @@
+---
+
+- name: template repo file elastic
+  template:
+    src: templates/elastic.repo
+    dest: /etc/yum.repos.d/elastic.repo
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: install filebeat 
+  dnf:
+    name: filebeat
+    state: present
+    disable_gpg_check: yes
+
+- name: template filebeat config
+  template:
+    src: templates/filebeat.yml.j2
+    dest: /etc/filebeat/filebeat.yml
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: enable nginx module
+  command: "{{item}}"
+  with_items:
+    - filebeat modules enable nginx
+    - filebeat setup -e
+
+- name: start filebeat service
+  systemd:
+    name: filebeat.service
+    enabled: yes
+    state: started
+
